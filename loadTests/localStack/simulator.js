@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 import {performance} from 'perf_hooks';
-import {config} from './config/config.js';
+import {config, , generateUniqueId} from './config/config.js';
 
 // Configure AWS SDK
 AWS.config.update(config);
