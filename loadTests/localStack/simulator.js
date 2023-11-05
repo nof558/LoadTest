@@ -1,16 +1,6 @@
 import AWS from 'aws-sdk';
 import {performance} from 'perf_hooks';
-import {config, , generateUniqueId} from './config/config.js';
-
-// Configure AWS SDK
-AWS.config.update(config);
-
-// Create service clients
-const ec2 = new AWS.EC2();
-const iam = new AWS.IAM();
-const s3 = new AWS.S3();
-const sqs = new AWS.SQS();
-const lambda = new AWS.Lambda();
+import {getCredentials, awsConfig, generateUniqueId, createZipBuffer, params} from './config/config.js';
 
 let cleanupInProgress = false;
 
@@ -26,7 +16,20 @@ const metrics = {
 	timings: {},
 };
 
-const createEc2Instance = async () => {
+const createServiceClients = async () => {
+	const updatedConfig = await getCredentials();
+	AWS.config.update({...awsConfig, credentials: updatedConfig});
+
+	return {
+		ec2: new AWS.EC2(),
+		iam: new AWS.IAM(),
+		s3: new AWS.S3(),
+		sqs: new AWS.SQS(),
+		lambda: new AWS.Lambda(),
+	};
+};
+
+const createEc2Instance = async (ec2) => {
 	try {
 		const start = performance.now();
 		const uniqueName = `mockEc2Instance_${generateUniqueId()}`;
@@ -46,7 +49,7 @@ const createEc2Instance = async () => {
 	}
 };
 
-const createIamRole = async () => {
+const createIamRole = async (iam) => {
 	const start = performance.now();
 	const roleName = `mockLambdaExecutionRole_${generateUniqueId()}`;
 	const params = {
@@ -80,7 +83,7 @@ const createIamRole = async () => {
 	}
 };
 
-const createS3Bucket = async () => {
+const createS3Bucket = async (s3) => {
 	const start = performance.now();
 	const bucketName = `test-bucket-${generateUniqueId()}`;
 	const params = {
@@ -98,7 +101,7 @@ const createS3Bucket = async () => {
 	}
 };
 
-const createLambdaFunction = async (roleArn) => {
+const createLambdaFunction = async (lambda, roleArn) => {
 	const start = performance.now();
 	const lambdaFunctionName = `testFunction${generateUniqueId()}`;
 	const zipBuffer = await createZipBuffer();
@@ -121,7 +124,7 @@ const createLambdaFunction = async (roleArn) => {
 	}
 };
 
-const createSqsQueue = async () => {
+const createSqsQueue = async (sqs) => {
 	const start = performance.now();
 	const sqsQueueName = `test-queue-${generateUniqueId()}`;
 	const params = {
@@ -139,11 +142,12 @@ const createSqsQueue = async () => {
 	}
 };
 
-const harvestResources = async (roleName, lambdaFunctionName, bucketName, sqsQueueName) => {
+const harvestResources = async (lambdaFunctionName, bucketName, sqsQueueName) => {
 	try {
 		const start = performance.now();
 		metrics.harvestRequestsSent++;
 
+		// EC2
 		const ec2Data = await ec2.describeInstances({}).promise();
 		ec2Data.Reservations.forEach((reservation) => {
 			reservation.Instances.forEach((instance) => {
@@ -151,20 +155,35 @@ const harvestResources = async (roleName, lambdaFunctionName, bucketName, sqsQue
 			});
 		});
 
+		// S3
 		const s3Data = await s3.listBuckets({}).promise();
 		s3Data.Buckets.forEach((bucket) => {
 			console.log(`S3 Bucket Name: ${bucket.Name}`);
 		});
 
+		const bucketPolicy = await s3.getBucketPolicy({Bucket: bucketName}).promise();
+		console.log(`S3 Bucket Policy: ${JSON.stringify(bucketPolicy.Policy)}`);
+
+		// Lambda
 		const lambdaData = await lambda.getFunction({FunctionName: lambdaFunctionName}).promise();
+		const functionConfiguration = await lambda.getFunctionConfiguration({FunctionName: lambdaFunctionName}).promise();
+		console.log(`Lambda Function Configuration: ${JSON.stringify(functionConfiguration)}`);
 		console.log(`Lambda Function Name: ${lambdaData.Configuration.FunctionName}, Runtime: ${lambdaData.Configuration.Runtime}`);
 
+		// SQS
 		const sqsData = await sqs.listQueues({}).promise();
 		sqsData.QueueUrls.forEach((queueUrl) => {
 			if (queueUrl.includes(sqsQueueName)) {
 				console.log(`SQS Queue URL: ${queueUrl}`);
 			}
 		});
+		const queueAttributes = await sqs
+			.getQueueAttributes({
+				QueueUrl: (await sqs.getQueueUrl({QueueName: sqsQueueName}).promise()).QueueUrl,
+				AttributeNames: ['All'],
+			})
+			.promise();
+		console.log(`SQS Queue Attributes: ${JSON.stringify(queueAttributes.Attributes)}`);
 
 		metrics.harvestRequestsSuccessful++;
 		metrics.timings.harvestDuration = performance.now() - start;
@@ -221,11 +240,14 @@ const cleanupResources = async (roleName, lambdaFunctionName, cleanupBucketName,
 
 const createResources = async () => {
 	try {
-		const {roleArn} = await createIamRole();
-		await createEc2Instance();
-		await createS3Bucket();
-		await createLambdaFunction(roleArn);
-		await createSqsQueue();
+		const {ec2, iam, s3, sqs, lambda} = await createServiceClients();
+
+		const {roleArn} = await createIamRole(iam);
+		await createEc2Instance(ec2);
+		await createS3Bucket(s3);
+		await createLambdaFunction(lambda, roleArn);
+		await createSqsQueue(sqs);
+
 		console.log('All resources created successfully.');
 		console.log('Metrics:', metrics);
 	} catch (error) {

@@ -14,10 +14,5 @@ config:
 scenarios:
   - flow:
       - get:
-          url: "/create"
-      - think: 20
-      - get:
           url: "/harvest"
       - think: 20
-      - get:
-          url: "/cleanup"

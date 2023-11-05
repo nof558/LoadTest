@@ -1,35 +1,79 @@
+import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import https from 'https';
 import {v4 as uuidv4} from 'uuid';
 import JSZip from 'jszip';
 
 dotenv.config();
 
-export const config = {
+const isDocker = fs.existsSync('/.dockerenv');
+const endpoint = isDocker ? 'https://localstack:4566' : 'https://localhost:4566';
+
+const awsConfig = {
 	region: process.env.AWS_REGION || 'us-east-1',
-	endpoint: fs.existsSync('/.dockerenv') ? 'http://localstack:4566' : 'http://localhost:4566',
-	credentials: {
-		accessKeyId: process.env.AWS_ACCESS_KEY || 'TEST1',
-		secretAccessKey: process.env.AWS_SECRET_KEY || 'TEST1',
+	endpoint,
+	sslEnabled: true,
+	s3ForcePathStyle: true,
+	httpOptions: {
+		agent: new https.Agent({
+			rejectUnauthorized: false,
+		}),
 	},
 };
 
-console.log(`AWS Access Key: ${process.env.AWS_ACCESS_KEY_ID}`);
-console.log(`AWS Secret Key: ${process.env.AWS_SECRET_ACCESS_KEY}`);
-console.log(`Config Endpoint: ${config.endpoint}`);
+const sts = new AWS.STS(awsConfig);
 
-export const generateUniqueId = () => {
+let cachedCredentials = {};
+
+const assumeRole = async (roleArn, awsConfig) => {
+	try {
+		console.log('Attempting to assume role...');
+		const sts = new AWS.STS(awsConfig);
+		const assumedRole = await sts
+			.assumeRole({
+				RoleArn: roleArn, // use the passed roleArn
+				RoleSessionName: 'XMLoadTest', // replace with your session name
+				DurationSeconds: 3600, // adjust the duration as per your requirement
+			})
+			.promise();
+
+		cachedCredentials[roleArn] = new AWS.Credentials(
+			assumedRole.Credentials.AccessKeyId,
+			assumedRole.Credentials.SecretAccessKey,
+			assumedRole.Credentials.SessionToken,
+		);
+
+		console.log('Assumed role successfully');
+		console.log('Temporary AccessKeyId:', assumedRole.Credentials.AccessKeyId);
+		console.log('Temporary SecurityToken:', assumedRole.Credentials.SessionToken);
+
+		return cachedCredentials[roleArn];
+	} catch (error) {
+		console.error('Error assuming role:', error.message);
+		throw error; // propagate the error up the call stack
+	}
+};
+
+const getCredentials = async (roleArn, awsConfig) => {
+	if (!cachedCredentials[roleArn] || new Date(cachedCredentials[roleArn].expiration) <= new Date()) {
+		return await assumeRole(roleArn, awsConfig);
+	}
+	return cachedCredentials[roleArn];
+};
+
+const generateUniqueId = () => {
 	return `${Date.now()}-${uuidv4()}`;
 };
 
-export const createZipBuffer = async () => {
+const createZipBuffer = async () => {
 	const zip = new JSZip();
 	zip.file('index.js', 'exports.handler = function(event, ctx, callback) { callback(null, "Hello from Lambda"); }');
 	return await zip.generateAsync({type: 'nodebuffer'});
 };
 
 // Define the parameters for the EC2 instance creation
-export const params = (uniqueName) => ({
+const params = (uniqueName) => ({
 	ImageId: 'ami-mock',
 	MinCount: 1,
 	MaxCount: 1,
@@ -45,3 +89,5 @@ export const params = (uniqueName) => ({
 		},
 	],
 });
+
+export {getCredentials, awsConfig, generateUniqueId, createZipBuffer, params};

@@ -4,10 +4,11 @@
 	"description": "Load Test Using LocalStack",
 	"type": "module",
 	"scripts": {
-		"start": "node server/app.js",
+		"start": "node server/app.js && node simulator.js",
 		"build": "docker-compose -f config/docker-compose.yml build",
 		"up": "docker-compose -f config/docker-compose.yml up -d",
 		"down": "docker-compose -f config/docker-compose.yml down -v",
+		"rebuild": "yarn down && yarn build && yarn up && yarn test",
 		"test": "artillery run config/artillery-config.yml"
 	},
 	"keywords": [],
