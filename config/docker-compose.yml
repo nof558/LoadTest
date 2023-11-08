@@ -9,6 +9,8 @@ services:
       - SERVICES=ec2,s3,lambda,sqs,iam
       - PERSISTENCE=1
       - USE_SSL=true
+      - LOCALSTACK_API_KEY=7xLP9d5p6S
+      - ACTIVATE_PRO=1
     volumes:
       - './.localstack:/tmp/localstack'
       - /var/run/docker.sock:/var/run/docker.sock

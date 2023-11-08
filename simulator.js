@@ -29,17 +29,11 @@ const createServiceClients = async () => {
 	};
 };
 
-const createEc2Instance = async (ec2) => {
+const createEc2Instance = async (ec2, params) => {
 	try {
 		const start = performance.now();
 		const uniqueName = `mockEc2Instance_${generateUniqueId()}`;
-		const params = {
-			ImageId: 'ami-0abcdef1234567890',
-			InstanceType: 't2.micro',
-			MinCount: 1,
-			MaxCount: 1,
-		};
-		const instanceData = await ec2.runInstances(params).promise();
+		const instanceData = await ec2.runInstances(params(uniqueName)).promise();
 		metrics.ec2InstancesCreated++;
 		metrics.timings.ec2Creation = performance.now() - start;
 		console.log(`EC2 Instance with ID: ${instanceData.Instances[0].InstanceId} created.`);
@@ -243,7 +237,7 @@ const createResources = async () => {
 		const {ec2, iam, s3, sqs, lambda} = await createServiceClients();
 
 		const {roleArn} = await createIamRole(iam);
-		await createEc2Instance(ec2);
+		await createEc2Instance(ec2, params);
 		await createS3Bucket(s3);
 		await createLambdaFunction(lambda, roleArn);
 		await createSqsQueue(sqs);
