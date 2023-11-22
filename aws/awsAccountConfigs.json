@@ -1,9 +1,0 @@
-[
-	{
-	  "roleArn": "arn:aws:iam::123456789012:role/YourRole",
-	  "awsConfig": {
-		"region": "us-east-1"
-	  }
-	}
-  ]
-  
