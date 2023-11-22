@@ -1,0 +1,34 @@
+version: '3.2'
+services:
+  localstack:
+    image: localstack/localstack-pro
+    container_name: localstack
+    hostname: localstack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=ec2,s3,lambda,sqs,iam
+      - USE_SSL=1
+      - LOCALSTACK_AUTH_TOKEN="ls-FIlUlUDE-CitO-zoqA-4864-0739heyi424f"
+      - ACTIVATE_PRO=1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+
+  app:
+    build: 
+      context: ../
+      dockerfile: Dockerfile
+    container_name: express-server
+    ports:
+      - "3000:3000"
+    environment:
+    - AWS_ACCESS_KEY_ID=TEST1
+    - AWS_SECRET_ACCESS_KEY=TEST1
+    depends_on:
+      - localstack
