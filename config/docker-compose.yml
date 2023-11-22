@@ -3,24 +3,23 @@ services:
   localstack:
     image: localstack/localstack-pro
     container_name: localstack
+    hostname: localstack
     ports:
       - '4566:4566'
     environment:
       - SERVICES=ec2,s3,lambda,sqs,iam
-      - PERSISTENCE=1
-      - USE_SSL=true
-      - LOCALSTACK_API_KEY=7xLP9d5p6S
+      - USE_SSL=1
+      - LOCALSTACK_AUTH_TOKEN="ls-FIlUlUDE-CitO-zoqA-4864-0739heyi424f"
       - ACTIVATE_PRO=1
     volumes:
-      - './.localstack:/tmp/localstack'
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "/var/run/docker.sock:/var/run/docker.sock"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 10s
       timeout: 10s
       retries: 3
 
-  
+
   app:
     build: 
       context: ../

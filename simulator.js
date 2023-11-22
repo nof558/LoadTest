@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 import {performance} from 'perf_hooks';
-import {getCredentials, awsConfig, generateUniqueId, createZipBuffer, params} from './config/config.js';
+import {getCredentials, defaultAwsConfig, generateUniqueId, createZipBuffer, ec2Params} from './config/config.js';
 
 let cleanupInProgress = false;
 
@@ -18,7 +18,7 @@ const metrics = {
 
 const createServiceClients = async () => {
 	const updatedConfig = await getCredentials();
-	AWS.config.update({...awsConfig, credentials: updatedConfig});
+	AWS.config.update({...defaultAwsConfig, credentials: updatedConfig});
 
 	return {
 		ec2: new AWS.EC2(),
@@ -237,7 +237,7 @@ const createResources = async () => {
 		const {ec2, iam, s3, sqs, lambda} = await createServiceClients();
 
 		const {roleArn} = await createIamRole(iam);
-		await createEc2Instance(ec2, params);
+		await createEc2Instance(ec2, ec2Params);
 		await createS3Bucket(s3);
 		await createLambdaFunction(lambda, roleArn);
 		await createSqsQueue(sqs);
