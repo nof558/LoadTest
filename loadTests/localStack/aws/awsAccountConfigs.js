@@ -23,4 +23,5 @@ export const awsConfig = [
 		}
 	  }
 	}
+	// Add more configurations as needed
   ]
