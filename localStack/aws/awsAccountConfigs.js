@@ -1,14 +1,27 @@
 export const awsConfig = [
 	{
-		roleArn: 'arn:aws:iam::123456789012:role/YourRole',
-		awsConfig: {
-			region: 'us-east-1',
-		},
+	  "roleArn": "arn:aws:iam::123456789012:role/Test",
+	  "awsConfig": {
+		"region": "us-east-1",
+		"entityConfig": {
+		  "ec2Instances": 15,
+		  "s3Buckets": 3,
+		  "lambdaFunctions": 3,
+		  "sqsQueues": 4
+		}
+	  }
 	},
 	{
-		roleArn: 'arn:aws:iam::345678901234:role/AnotherRole',
-		awsConfig: {
-			region: 'us-west-2',
-		},
-	},
-];
+	  "roleArn": "arn:aws:iam::210987654321:role/Test2",
+	  "awsConfig": {
+		"region": "eu-west-2",
+		"entityConfig": {
+		  "ec2Instances": 10,
+		  "s3Buckets": 7,
+		  "lambdaFunctions": 3,
+		  "sqsQueues": 1
+		}
+	  }
+	}
+	// Add more configurations as needed
+  ]
