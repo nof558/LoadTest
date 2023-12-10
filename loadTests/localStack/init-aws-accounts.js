@@ -1,23 +1,22 @@
 import AWSAccountManager from './aws/AWSAccountManager.js';
-import { awsConfig } from './aws/awsAccountConfigs.js';
+import {awsConfig, numberOfAccounts} from './aws/awsAccountConfigs.js';
 import Organization from './aws/Organization.js';
 
 export async function initAWSAccounts() {
 	console.log('Starting organization creation...');
 	const organization = new Organization();
-	await organization.createOrganization(); // Create the organization
+	await organization.createOrganization();
 	console.log('Organization creation completed.');
 
 	const accountManager = new AWSAccountManager();
 
-	for (const config of awsConfig) {
+	for (let i = 0; i < numberOfAccounts; i++) {
+		const config = awsConfig[i % awsConfig.length];
 		try {
-			// Create and add account to the organization
 			console.log(`Adding account with config: ${config.accountId}`);
 			await organization.addAccount(config);
 			console.log(`Account added to organization with config: ${config.accountId}`);
 
-			// Initialize account in AWSAccountManager for further management
 			const accountIdentifier = await accountManager.initializeAccount(config.roleArn, config);
 			console.log(`Account initialized in AWSAccountManager with identifier: ${accountIdentifier}`);
 		} catch (error) {
@@ -25,3 +24,6 @@ export async function initAWSAccounts() {
 		}
 	}
 }
+
+// Execute the function if this script is run directly
+initAWSAccounts().catch(error => console.error('Initialization failed:', error));

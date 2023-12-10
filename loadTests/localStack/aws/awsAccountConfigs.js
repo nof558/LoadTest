@@ -1,3 +1,5 @@
+export const numberOfAccounts = 400;
+
 export const awsConfig = [
 	{
 		accountId: '123456789012',

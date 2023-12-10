@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import {generateUniqueId, getCredentials} from '../config/config.js';
+import { generateUniqueId, getCredentials } from '../config/config.js';
 
 export default class AWSAccountManager {
 	constructor() {
@@ -16,6 +16,7 @@ export default class AWSAccountManager {
 			awsConfig,
 			credentials,
 		};
+		console.log(`Account initialized: ${accountIdentifier}, Role ARN: ${roleArn}`);
 		return accountIdentifier;
 	}
 
@@ -26,7 +27,9 @@ export default class AWSAccountManager {
 		}
 		// Refresh credentials if they are expired or about to expire
 		if (new Date(account.credentials.expiration) <= new Date()) {
+			console.log(`Refreshing credentials for account: ${accountIdentifier}`);
 			account.credentials = await getCredentials(account.roleArn, account.awsConfig);
+			console.log(`Credentials refreshed for account: ${accountIdentifier}`);
 		}
 		// Return the AWS clients configured with the credentials
 		return {

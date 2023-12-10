@@ -1,8 +1,11 @@
 import AWS from 'aws-sdk';
+import AWSAccountManager from './aws/AWSAccountManager.js';
+import {awsConfig} from './aws/awsAccountConfigs.js';
 import {performance} from 'perf_hooks';
 import {getCredentials, defaultAwsConfig, generateUniqueId, createZipBuffer, ec2Params} from './config/config.js';
 
 let cleanupInProgress = false;
+const accountManager = new AWSAccountManager();
 
 // Metrics counters
 const metrics = {
@@ -232,20 +235,40 @@ const cleanupResources = async (roleName, lambdaFunctionName, cleanupBucketName,
 	}
 };
 
-const createResources = async () => {
-	try {
-		const {ec2, iam, s3, sqs, lambda} = await createServiceClients();
+const createResourcesForAccount = async (accountConfig) => {
+	const { ec2, iam, s3, sqs, lambda } = await createServiceClients(accountConfig.awsConfig);
 
-		const {roleArn} = await createIamRole(iam);
+	// Create EC2 Instances
+	for (let i = 0; i < accountConfig.awsConfig.entityConfig.ec2Instances; i++) {
 		await createEc2Instance(ec2, ec2Params);
-		await createS3Bucket(s3);
-		await createLambdaFunction(lambda, roleArn);
-		await createSqsQueue(sqs);
+	}
 
-		console.log('All resources created successfully.');
-		console.log('Metrics:', metrics);
-	} catch (error) {
-		console.error('Error during resource creation:', error.message);
+	// Create S3 Buckets
+	for (let i = 0; i < accountConfig.awsConfig.entityConfig.s3Buckets; i++) {
+		await createS3Bucket(s3);
+	}
+
+	// Create Lambda Functions
+	const { roleArn } = await createIamRole(iam); // Assuming one role for all lambda functions
+	for (let i = 0; i < accountConfig.awsConfig.entityConfig.lambdaFunctions; i++) {
+		await createLambdaFunction(lambda, roleArn);
+	}
+
+	// Create SQS Queues
+	for (let i = 0; i < accountConfig.awsConfig.entityConfig.sqsQueues; i++) {
+		await createSqsQueue(sqs);
+	}
+
+	console.log(`Resources created for account: ${accountConfig.accountId}`);
+};
+
+const createResources = async () => {
+	for (const config of awsConfig) {
+		try {
+			await createResourcesForAccount(config);
+		} catch (error) {
+			console.error(`Error creating resources for account ${config.accountId}:`, error);
+		}
 	}
 };
 

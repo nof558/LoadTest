@@ -26,13 +26,11 @@ export default class Organization {
 				AccountName: `Account-${accountConfig.accountId}`
 			}).promise();
 
-			console.log('Account creation initiated:', createAccountResponse.CreateAccountStatus);
-
 			// Since LocalStack mocks AWS, the account creation is instantaneous
 			// In a real AWS environment, you would need to poll for account creation status
 
 			this.accounts.push(createAccountResponse.CreateAccountStatus);
-			console.log('Account added to organization:', createAccountResponse.CreateAccountStatus);
+			console.log('Account added & initated to organization:', createAccountResponse.CreateAccountStatus);
 		} catch (error) {
 			console.error('Error adding account to organization:', error);
 			throw error;
