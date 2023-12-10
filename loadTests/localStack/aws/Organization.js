@@ -10,9 +10,7 @@ export default class Organization {
 
 	async createOrganization() {
 		try {
-			const response = await this.organizations.createOrganization({
-				FeatureSet: 'ALL'
-			}).promise();
+			const response = await this.organizations.createOrganization({FeatureSet: 'ALL'}).promise();
 			console.log('Organization created:', response.Organization);
 			return response.Organization;
 		} catch (error) {
@@ -24,7 +22,7 @@ export default class Organization {
 	async addAccount(accountConfig) {
 		try {
 			const createAccountResponse = await this.organizations.createAccount({
-				Email: `account+${accountConfig.accountId}@example.com`,
+				Email: `account+${accountConfig.accountId}@loadTest.com`,
 				AccountName: `Account-${accountConfig.accountId}`
 			}).promise();
 

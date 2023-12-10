@@ -11,6 +11,7 @@ const organizations = new AWS.Organizations();
 
 async function getOrganizationInfo() {
 	try {
+		console.log('Retrieving organization info...');
 		const response = await organizations.describeOrganization().promise();
 		console.log('Organization Info:', response.Organization);
 	} catch (error) {

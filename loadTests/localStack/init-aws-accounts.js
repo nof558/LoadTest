@@ -3,14 +3,17 @@ import { awsConfig } from './aws/awsAccountConfigs.js';
 import Organization from './aws/Organization.js';
 
 export async function initAWSAccounts() {
+	console.log('Starting organization creation...');
 	const organization = new Organization();
 	await organization.createOrganization(); // Create the organization
+	console.log('Organization creation completed.');
 
 	const accountManager = new AWSAccountManager();
 
 	for (const config of awsConfig) {
 		try {
 			// Create and add account to the organization
+			console.log(`Adding account with config: ${config.accountId}`);
 			await organization.addAccount(config);
 			console.log(`Account added to organization with config: ${config.accountId}`);
 
