@@ -7,9 +7,8 @@ services:
     ports:
       - '4566:4566'
     environment:
-      - SERVICES=ec2,s3,lambda,sqs,iam
-      - USE_SSL=1
-      - LOCALSTACK_AUTH_TOKEN="ls-FIlUlUDE-CitO-zoqA-4864-0739heyi424f"
+      - SERVICES=organizations,ec2,s3,lambda,sqs,iam
+      - LOCALSTACK_AUTH_TOKEN="ls-RiBUToNa-KOBo-9819-fuNI-rEZi579134e9"
       - ACTIVATE_PRO=1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
