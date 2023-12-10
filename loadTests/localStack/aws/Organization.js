@@ -11,7 +11,7 @@ export default class Organization {
 	async createOrganization() {
 		try {
 			const response = await this.organizations.createOrganization({
-				FeatureSet: 'ALL' // LocalStack supports 'ALL' feature set
+				FeatureSet: 'ALL'
 			}).promise();
 			console.log('Organization created:', response.Organization);
 			return response.Organization;

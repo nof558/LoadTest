@@ -1,8 +1,10 @@
 import AWS from 'aws-sdk';
 
 AWS.config.update({
-	endpoint: 'http://localhost:4566',
-	region: 'us-east-1',
+    endpoint: 'http://localhost:4566',
+    region: 'us-east-1',
+    sslEnabled: false,
+    s3ForcePathStyle: true,
 });
 
 const organizations = new AWS.Organizations();

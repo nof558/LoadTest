@@ -14,7 +14,7 @@ const endpoint = isDocker ? 'https://localstack:4566' : 'https://localhost:4566'
 const defaultAwsConfig = {
 	region: process.env.AWS_REGION || 'us-east-1',
 	endpoint,
-	sslEnabled: true,
+	sslEnabled: false,
 	s3ForcePathStyle: true,
 	httpOptions: {
 		agent: new https.Agent({
