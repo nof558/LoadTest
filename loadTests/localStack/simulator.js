@@ -1,12 +1,11 @@
-import AWS from 'aws-sdk';
 import AWSAccountManager from './aws/AWSAccountManager.js';
-import {awsConfig} from './aws/awsAccountConfigs.js';
 import {performance} from 'perf_hooks';
-import {getCredentials, defaultAwsConfig, generateUniqueId, createZipBuffer, ec2Params} from './config/config.js';
+import {generateUniqueId, createZipBuffer, ec2Params} from './config/config.js';
 
 let cleanupInProgress = false;
 const accountManager = new AWSAccountManager();
 
+// TODO: Fix and adjust the metrics measures after the recent changes & add new metrics
 // Metrics counters
 const metrics = {
 	ec2InstancesCreated: 0,
@@ -17,19 +16,6 @@ const metrics = {
 	harvestRequestsSent: 0,
 	harvestRequestsSuccessful: 0,
 	timings: {},
-};
-
-const createServiceClients = async () => {
-	const updatedConfig = await getCredentials();
-	AWS.config.update({...defaultAwsConfig, credentials: updatedConfig});
-
-	return {
-		ec2: new AWS.EC2(),
-		iam: new AWS.IAM(),
-		s3: new AWS.S3(),
-		sqs: new AWS.SQS(),
-		lambda: new AWS.Lambda(),
-	};
 };
 
 const createEc2Instance = async (ec2, params) => {
@@ -139,6 +125,7 @@ const createSqsQueue = async (sqs) => {
 	}
 };
 
+// TODO: Replace params with accountID and add option to harvest from specific entity type only
 const harvestResources = async (lambdaFunctionName, bucketName, sqsQueueName) => {
 	try {
 		const start = performance.now();
@@ -235,8 +222,9 @@ const cleanupResources = async (roleName, lambdaFunctionName, cleanupBucketName,
 	}
 };
 
-const createResourcesForAccount = async (accountConfig) => {
-	const { ec2, iam, s3, sqs, lambda } = await createServiceClients(accountConfig.awsConfig);
+const createResourcesForAccount = async (accountIdentifier) => {
+	const accountConfig = accountManager.accounts[accountIdentifier];
+	const { ec2, iam, s3, sqs, lambda } = await accountManager.getAccount(accountIdentifier);
 
 	// Create EC2 Instances
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.ec2Instances; i++) {
@@ -259,17 +247,19 @@ const createResourcesForAccount = async (accountConfig) => {
 		await createSqsQueue(sqs);
 	}
 
-	console.log(`Resources created for account: ${accountConfig.accountId}`);
+	console.log(`Resources created for account: ${accountIdentifier}`);
 };
 
+// TODO: Add support for creating specific aws account instead creating all accounts from the configs file
 const createResources = async () => {
-	for (const config of awsConfig) {
+	for (const accountIdentifier in accountManager.accounts) {
 		try {
-			await createResourcesForAccount(config);
+			await createResourcesForAccount(accountIdentifier);
 		} catch (error) {
 			console.error(`Error creating resources for account ${config.accountId}:`, error);
 		}
 	}
+	console.log('All resources created across accounts.');
 };
 
 export {createResources, harvestResources, cleanupResources};

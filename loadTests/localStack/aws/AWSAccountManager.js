@@ -6,21 +6,20 @@ export default class AWSAccountManager {
 		this.accounts = {}; // Stores account details and STS tokens
 	}
 
-	async initializeAccount(roleArn, awsConfig) {
+	async initializeAccount(accountConfig) {
 		// Assume the role and get credentials
-		const credentials = await getCredentials(roleArn, awsConfig);
+		const credentials = await getCredentials(accountConfig.roleArn, accountConfig.awsConfig);
 		const accountIdentifier = generateUniqueId('account_');
 		// Store the credentials against the account identifier
 		this.accounts[accountIdentifier] = {
-			roleArn,
-			awsConfig,
+			...accountConfig,
 			credentials,
 		};
 		console.log(`Account initialized: ${accountIdentifier}, Role ARN: ${roleArn}`);
 		return accountIdentifier;
 	}
 
-	async getAWSClients(accountIdentifier) {
+	async getAccount(accountIdentifier) {
 		const account = this.accounts[accountIdentifier];
 		if (!account) {
 			throw new Error('Account not found');
@@ -31,7 +30,7 @@ export default class AWSAccountManager {
 			account.credentials = await getCredentials(account.roleArn, account.awsConfig);
 			console.log(`Credentials refreshed for account: ${accountIdentifier}`);
 		}
-		// Return the AWS clients configured with the credentials
+		// Return the AWS accounts configured with the credentials
 		return {
 			ec2: new AWS.EC2({...account.awsConfig, credentials: account.credentials}),
 			iam: new AWS.IAM({...account.awsConfig, credentials: account.credentials}),

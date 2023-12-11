@@ -22,8 +22,8 @@ app.post('/init', async (req, res) => {
 app.post('/create', async (req, res) => {
 	const {accountIdentifier} = req.body;
 	try {
-		const awsClients = new AWSAccountManager().getAWSClients(accountIdentifier);
-		await createResources(await awsClients);
+		const awsAccounts = new AWSAccountManager().getAccount(accountIdentifier);
+		await createResources(await awsAccounts);
 		res.send('Resources Created');
 	} catch (error) {
 		console.error('Error during resource creation:', error.message);
@@ -34,8 +34,8 @@ app.post('/create', async (req, res) => {
 app.post('/harvest', async (req, res) => {
 	const {accountIdentifier} = req.body;
 	try {
-		const awsClients = new AWSAccountManager().getAWSClients(accountIdentifier);
-		const harvestedData = await harvestResources(await awsClients);
+		const awsAccounts = new AWSAccountManager().getAccount(accountIdentifier);
+		const harvestedData = await harvestResources(await awsAccounts);
 		res.json(harvestedData);
 	} catch (error) {
 		console.error('Error during resource harvesting:', error.message);
@@ -46,8 +46,8 @@ app.post('/harvest', async (req, res) => {
 app.post('/cleanup', async (req, res) => {
 	const {accountIdentifier} = req.body;
 	try {
-		const awsClients = new AWSAccountManager().getAWSClients(accountIdentifier);
-		await cleanupResources(awsClients);
+		const awsAccounts = new AWSAccountManager().getAccount(accountIdentifier);
+		await cleanupResources(awsAccounts);
 		res.send('Resources Cleaned Up');
 	} catch (error) {
 		console.error('Error during resource cleanup:', error.message);

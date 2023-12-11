@@ -17,7 +17,7 @@ export async function initAWSAccounts() {
 			await organization.addAccount(config);
 			console.log(`Account added to organization with config: ${config.accountId}`);
 
-			const accountIdentifier = await accountManager.initializeAccount(config.roleArn, config);
+			const accountIdentifier = await accountManager.initializeAccount(config);
 			console.log(`Account initialized in AWSAccountManager with identifier: ${accountIdentifier}`);
 		} catch (error) {
 			console.error(`Error in account initialization:`, error);
@@ -25,5 +25,5 @@ export async function initAWSAccounts() {
 	}
 }
 
-// Execute the function if this script is run directly
+// Execute the function
 initAWSAccounts().catch(error => console.error('Initialization failed:', error));
