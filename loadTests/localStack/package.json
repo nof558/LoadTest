@@ -10,7 +10,7 @@
 		"down": "docker-compose -f config/docker-compose.yml down -v",
 		"rebuild": "yarn down && yarn build && yarn up",
 		"stop": "docker-compose -f config/docker-compose.yml stop",
-		"creation": "yarn up && node init-aws-accounts.js && node simulator.js createResources",
+		"creation": "node init-aws-accounts.js && node simulator.js createResources",
 		"retrieve-org": "node retrieveOrganization.js",
 		"harvest": "node simulator.js harvestResources",
 		"cleanup": "node simulator.js cleanupResources",

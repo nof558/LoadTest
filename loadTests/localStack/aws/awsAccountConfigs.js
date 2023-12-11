@@ -1,4 +1,4 @@
-export const numberOfAccounts = 400;
+export const numberOfAccounts = 10;
 
 export const awsConfig = [
 	{
