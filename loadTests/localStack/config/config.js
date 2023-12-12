@@ -37,7 +37,7 @@ const assumeRole = async (roleArn, awsConfigOverrides) => {
 			expiration: assumedRole.Credentials.Expiration,
 		};
 
-		return credentials;
+		return cachedCredentials[roleArn];
 
 	} catch (error) {
 		console.error(`Error assuming role for ${roleArn}:`, error.message);
