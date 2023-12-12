@@ -8,14 +8,23 @@ export default class AWSAccountManager {
 
 	async initializeAccount(accountConfig) {
 		// Assume the role and get credentials
-		const credentials = await getCredentials(accountConfig.roleArn, accountConfig.awsConfig);
+		const {credentials, expiration} = await getCredentials(accountConfig.roleArn, accountConfig.awsConfig);
 		const accountIdentifier = generateUniqueId('account_');
+
 		// Store the credentials against the account identifier
 		this.accounts[accountIdentifier] = {
 			...accountConfig,
 			credentials,
+			expiration,
 		};
-		console.log(`Account initialized: ${accountIdentifier}, Role ARN: ${roleArn}`);
+
+		// Log the STS token details
+		console.log(`Account initialized: ${accountIdentifier}, Role ARN: ${accountConfig.roleArn}`);
+		console.log(`STS Token Access Key: ${credentials.accessKeyId}`);
+		console.log(`STS Token Secret Access Key: ${credentials.secretAccessKey}`);
+		console.log(`STS Token Session Token: ${credentials.sessionToken}`);
+		console.log(`STS Token Expiration: ${expiration}`);
+
 		return accountIdentifier;
 	}
 
@@ -24,12 +33,19 @@ export default class AWSAccountManager {
 		if (!account) {
 			throw new Error('Account not found');
 		}
-		// Refresh credentials if they are expired or about to expire
-		if (new Date(account.credentials.expiration) <= new Date()) {
+	
+		// Check if credentials are expired or about to expire
+		if (new Date(account.expiration) <= new Date()) {
 			console.log(`Refreshing credentials for account: ${accountIdentifier}`);
-			account.credentials = await getCredentials(account.roleArn, account.awsConfig);
+			const { credentials, expiration } = await getCredentials(account.roleArn, account.awsConfig);
+	
+			// Update the stored credentials and expiration
+			account.credentials = credentials;
+			account.expiration = expiration;
+	
 			console.log(`Credentials refreshed for account: ${accountIdentifier}`);
 		}
+	
 		// Return the AWS accounts configured with the credentials
 		return {
 			ec2: new AWS.EC2({...account.awsConfig, credentials: account.credentials}),
@@ -39,4 +55,5 @@ export default class AWSAccountManager {
 			lambda: new AWS.Lambda({...account.awsConfig, credentials: account.credentials}),
 		};
 	}
+	
 }

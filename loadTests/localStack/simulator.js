@@ -1,6 +1,7 @@
 import AWSAccountManager from './aws/AWSAccountManager.js';
 import {performance} from 'perf_hooks';
-import {generateUniqueId, createZipBuffer, ec2Params} from './config/config.js';
+import {generateUniqueId, createZipBuffer, simulateDelay} from './config/config.js';
+import {ec2Params} from './aws/awsAccountConfigs.js';
 
 let cleanupInProgress = false;
 const accountManager = new AWSAccountManager();
@@ -224,30 +225,35 @@ const cleanupResources = async (roleName, lambdaFunctionName, cleanupBucketName,
 
 const createResourcesForAccount = async (accountIdentifier) => {
 	const accountConfig = accountManager.accounts[accountIdentifier];
-	const { ec2, iam, s3, sqs, lambda } = await accountManager.getAccount(accountIdentifier);
+	const {ec2, iam, s3, sqs, lambda} = await accountManager.getAccount(accountIdentifier);
 
 	// Create EC2 Instances
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.ec2Instances; i++) {
-		await createEc2Instance(ec2, ec2Params);
+		await createEc2Instance(ec2, ec2Params());
+		await simulateDelay(1000);
 	}
 
 	// Create S3 Buckets
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.s3Buckets; i++) {
 		await createS3Bucket(s3);
+		await simulateDelay(1000);
 	}
 
 	// Create Lambda Functions
 	const { roleArn } = await createIamRole(iam); // Assuming one role for all lambda functions
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.lambdaFunctions; i++) {
 		await createLambdaFunction(lambda, roleArn);
+		await simulateDelay(1000);
 	}
 
 	// Create SQS Queues
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.sqsQueues; i++) {
 		await createSqsQueue(sqs);
+		await simulateDelay(1000);
 	}
 
 	console.log(`Resources created for account: ${accountIdentifier}`);
+	await simulateDelay(3000);
 };
 
 // TODO: Add support for creating specific aws account instead creating all accounts from the configs file
@@ -255,6 +261,7 @@ const createResources = async () => {
 	for (const accountIdentifier in accountManager.accounts) {
 		try {
 			await createResourcesForAccount(accountIdentifier);
+			await simulateDelay(5000);
 		} catch (error) {
 			console.error(`Error creating resources for account ${config.accountId}:`, error);
 		}

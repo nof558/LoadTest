@@ -1,10 +1,10 @@
 import AWS from 'aws-sdk';
-import { defaultAwsConfig } from '../config/config.js';
+import {DEFAULT_AWS_CONFIG} from './awsAccountConfigs.js';
 
 export default class Organization {
 	constructor() {
 		this.accounts = [];
-		AWS.config.update(defaultAwsConfig);
+		AWS.config.update(DEFAULT_AWS_CONFIG);
 		this.organizations = new AWS.Organizations();
 	}
 
@@ -19,15 +19,22 @@ export default class Organization {
 		}
 	}
 
+	async removeAccount(accountId) {
+		try {
+			await this.organizations.removeAccountFromOrganization({ AccountId: accountId }).promise();
+			console.log(`Account ${accountId} removed from organization.`);
+		} catch (error) {
+			console.error('Error removing account:', error);
+			throw error;
+		}
+	}
+
 	async addAccount(accountConfig) {
 		try {
 			const createAccountResponse = await this.organizations.createAccount({
 				Email: `account+${accountConfig.accountId}@loadTest.com`,
 				AccountName: `Account-${accountConfig.accountId}`
 			}).promise();
-
-			// Since LocalStack mocks AWS, the account creation is instantaneous
-			// In a real AWS environment, you would need to poll for account creation status
 
 			this.accounts.push(createAccountResponse.CreateAccountStatus);
 			console.log('Account added & initated to organization:', createAccountResponse.CreateAccountStatus);
@@ -37,5 +44,26 @@ export default class Organization {
 		}
 	}
 
-	// Additional methods as required for managing the organization
+	async listAccounts() {
+		try {
+			const response = await this.organizations.listAccounts().promise();
+			return response.Accounts;
+		} catch (error) {
+			console.error('Error listing accounts:', error);
+			throw error;
+		}
+	}
+
+	async getAccountDetails(accountId) {
+		try {
+			const response = await this.organizations.describeAccount({ AccountId: accountId }).promise();
+			return response.Account;
+		} catch (error) {
+			console.error('Error getting account details:', error);
+			throw error;
+		}
+	}
+
+
+	
 }

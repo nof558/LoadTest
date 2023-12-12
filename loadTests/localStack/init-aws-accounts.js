@@ -1,6 +1,7 @@
 import AWSAccountManager from './aws/AWSAccountManager.js';
 import {awsConfig, numberOfAccounts} from './aws/awsAccountConfigs.js';
 import Organization from './aws/Organization.js';
+import {generateUniqueAccountId, simulateDelay} from './config/config.js';
 
 export async function initAWSAccounts() {
 	console.log('Starting organization creation...');
@@ -12,12 +13,22 @@ export async function initAWSAccounts() {
 
 	for (let i = 0; i < numberOfAccounts; i++) {
 		const config = awsConfig[i % awsConfig.length];
+		const uniqueAccountId = generateUniqueAccountId(i);
+		const uniqueRoleArn = `arn:aws:iam::${uniqueAccountId}:role/TEST${i}`;
+		const accountConfigWithIds = {
+			...config,
+			accountId: uniqueAccountId,
+			roleArn: uniqueRoleArn
+		};
 		try {
-			console.log(`Adding account with config: ${config.accountId}`);
-			await organization.addAccount(config);
-			console.log(`Account added to organization with config: ${config.accountId}`);
+			console.log(`Adding account with config: ${accountConfigWithIds.accountId}`);
+			await organization.addAccount(accountConfigWithIds);
+			console.log(`Account added to organization with config: ${accountConfigWithIds.accountId}`);
 
-			const accountIdentifier = await accountManager.initializeAccount(config);
+			// Simulate a delay for account creation
+			await simulateDelay(1000); // 1s delay
+
+			const accountIdentifier = await accountManager.initializeAccount(accountConfigWithIds);
 			console.log(`Account initialized in AWSAccountManager with identifier: ${accountIdentifier}`);
 		} catch (error) {
 			console.error(`Error in account initialization:`, error);

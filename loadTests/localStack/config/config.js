@@ -1,34 +1,14 @@
 import AWS from 'aws-sdk';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import https from 'https';
 import {v4 as uuidv4} from 'uuid';
 import JSZip from 'jszip';
-
-dotenv.config();
-
-const isDocker = fs.existsSync('/.dockerenv');
-const endpoint = isDocker ? 'https://localstack:4566' : 'https://localhost:4566';
-
-// General AWS config that can be overridden by specific account configs
-const defaultAwsConfig = {
-	region: process.env.AWS_REGION || 'us-east-1',
-	endpoint,
-	sslEnabled: false,
-	s3ForcePathStyle: true,
-	httpOptions: {
-		agent: new https.Agent({
-			rejectUnauthorized: false,
-		}),
-	},
-};
+import {DEFAULT_AWS_CONFIG} from '../aws/awsAccountConfigs.js'
 
 // Cache for assumed role credentials to avoid unnecessary calls to STS
 let cachedCredentials = {};
 
 // Function to assume an AWS role
 const assumeRole = async (roleArn, awsConfigOverrides) => {
-	const awsConfig = {...defaultAwsConfig, ...awsConfigOverrides};
+	const awsConfig = {...DEFAULT_AWS_CONFIG, ...awsConfigOverrides};
 	const sts = new AWS.STS(awsConfig);
 
 	try {
@@ -41,16 +21,24 @@ const assumeRole = async (roleArn, awsConfigOverrides) => {
 			})
 			.promise();
 
-		const credentials = new AWS.Credentials(assumedRole.Credentials.AccessKeyId, assumedRole.Credentials.SecretAccessKey, assumedRole.Credentials.SessionToken);
+			if (!assumedRole.Credentials || !assumedRole.Credentials.Expiration) {
+				throw new Error('Invalid STS token response');
+			}
 
+			const credentials = new AWS.Credentials(
+				assumedRole.Credentials.AccessKeyId,
+				assumedRole.Credentials.SecretAccessKey,
+				assumedRole.Credentials.SessionToken
+			);
+		
 		// Store credentials in cache with expiration
 		cachedCredentials[roleArn] = {
 			credentials,
 			expiration: assumedRole.Credentials.Expiration,
 		};
 
-		console.log(`Assumed role successfully for: ${roleArn}\nSTS Token: ${cachedCredentials[roleArn]}\n`);
 		return credentials;
+
 	} catch (error) {
 		console.error(`Error assuming role for ${roleArn}:`, error.message);
 		throw error;
@@ -63,12 +51,21 @@ const getCredentials = async (roleArn, awsConfigOverrides) => {
 	if (!cached || new Date(cached.expiration) <= new Date()) {
 		return await assumeRole(roleArn, awsConfigOverrides);
 	}
-	return cached.credentials;
+	return {
+		credentials: cached.credentials,
+		expiration: cached.expiration
+	};
 };
 
 // Utility function to generate a unique identifier
 const generateUniqueId = (prefix = 'id_') => {
 	return `${prefix}${Date.now()}-${uuidv4()}`;
+};
+
+// Generate a pseudo-random number and pad it to ensure it's 12 digits for AWS account ID
+const generateUniqueAccountId = (index) => {
+	const randomNumber = Math.floor(Math.random() * 1e12) + index;
+	return String(randomNumber).padStart(12, '0');
 };
 
 // Function to create a zip buffer for Lambda deployment packages
@@ -78,22 +75,7 @@ const createZipBuffer = async () => {
 	return await zip.generateAsync({type: 'nodebuffer'});
 };
 
-// Parameters for creating an EC2 instance
-const ec2Params = (uniqueName) => ({
-	ImageId: 'ami-mock',
-	MinCount: 1,
-	MaxCount: 1,
-	TagSpecifications: [
-		{
-			ResourceType: 'instance',
-			Tags: [
-				{
-					Key: 'Name',
-					Value: uniqueName,
-				},
-			],
-		},
-	],
-});
+// Function to simulate delay
+const simulateDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export {getCredentials, defaultAwsConfig, generateUniqueId, createZipBuffer, ec2Params};
+export {getCredentials, generateUniqueId, generateUniqueAccountId, createZipBuffer, simulateDelay};
