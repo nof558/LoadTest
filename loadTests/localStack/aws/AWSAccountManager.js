@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk';
 import { generateUniqueId, getCredentials } from '../config/config.js';
 
-export default class AWSAccountManager {
+class AWSAccountManager {
 	constructor() {
 		this.accounts = {}; // Stores account details and STS tokens
 	}
@@ -55,5 +55,7 @@ export default class AWSAccountManager {
 			lambda: new AWS.Lambda({...account.awsConfig, credentials: account.credentials}),
 		};
 	}
-	
 }
+
+const accountManagerInstance = new AWSAccountManager();
+export default accountManagerInstance;

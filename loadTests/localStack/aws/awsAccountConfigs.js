@@ -26,7 +26,8 @@ export const DEFAULT_AWS_CONFIG = {
 
 // Parameters for creating an EC2 instance
 export const ec2Params = (uniqueName = generateUniqueId('ec2_')) => ({
-	ImageId: 'ami-mock',
+	ImageId: 'ami-4ae27e22',
+    InstanceType: 't2.micro',
 	MinCount: 1,
 	MaxCount: 1,
 	TagSpecifications: [

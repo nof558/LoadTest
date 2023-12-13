@@ -1,15 +1,14 @@
-import AWSAccountManager from './aws/AWSAccountManager.js';
 import {awsConfig, numberOfAccounts} from './aws/awsAccountConfigs.js';
 import Organization from './aws/Organization.js';
 import {generateUniqueAccountId, simulateDelay} from './config/config.js';
+import {createResources} from './simulator.js';
+import accountManager from './aws/AWSAccountManager.js';
 
 export async function initAWSAccounts() {
 	console.log('Starting organization creation...');
 	const organization = new Organization();
 	await organization.createOrganization();
 	console.log('Organization creation completed.');
-
-	const accountManager = new AWSAccountManager();
 
 	for (let i = 0; i < numberOfAccounts; i++) {
 		const config = awsConfig[i % awsConfig.length];
@@ -37,4 +36,5 @@ export async function initAWSAccounts() {
 }
 
 // Execute the function
-initAWSAccounts().catch(error => console.error('Initialization failed:', error));
+await initAWSAccounts().catch(error => console.error('Initialization failed:', error));
+//await createResources();

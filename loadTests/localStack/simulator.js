@@ -2,10 +2,9 @@ import AWSAccountManager from './aws/AWSAccountManager.js';
 import {performance} from 'perf_hooks';
 import {generateUniqueId, createZipBuffer, simulateDelay} from './config/config.js';
 import {ec2Params} from './aws/awsAccountConfigs.js';
+import accountManager from './aws/AWSAccountManager.js';
 
 let cleanupInProgress = false;
-const accountManager = new AWSAccountManager();
-
 // TODO: Fix and adjust the metrics measures after the recent changes & add new metrics
 // Metrics counters
 const metrics = {
@@ -22,8 +21,7 @@ const metrics = {
 const createEc2Instance = async (ec2, params) => {
 	try {
 		const start = performance.now();
-		const uniqueName = `mockEc2Instance_${generateUniqueId()}`;
-		const instanceData = await ec2.runInstances(params(uniqueName)).promise();
+		const instanceData = await ec2.runInstances(params).promise();
 		metrics.ec2InstancesCreated++;
 		metrics.timings.ec2Creation = performance.now() - start;
 		console.log(`EC2 Instance with ID: ${instanceData.Instances[0].InstanceId} created.`);
@@ -69,7 +67,7 @@ const createIamRole = async (iam) => {
 
 const createS3Bucket = async (s3) => {
 	const start = performance.now();
-	const bucketName = `test-bucket-${generateUniqueId()}`;
+	const bucketName = `test-bucket-${generateUniqueId().toLowerCase()}`;
 	const params = {
 		Bucket: bucketName,
 	};
@@ -229,7 +227,8 @@ const createResourcesForAccount = async (accountIdentifier) => {
 
 	// Create EC2 Instances
 	for (let i = 0; i < accountConfig.awsConfig.entityConfig.ec2Instances; i++) {
-		await createEc2Instance(ec2, ec2Params());
+		let uniqueName = `mockEc2Instance_${generateUniqueId()}`;
+		await createEc2Instance(ec2, ec2Params(uniqueName));
 		await simulateDelay(1000);
 	}
 
@@ -263,7 +262,7 @@ const createResources = async () => {
 			await createResourcesForAccount(accountIdentifier);
 			await simulateDelay(5000);
 		} catch (error) {
-			console.error(`Error creating resources for account ${config.accountId}:`, error);
+			console.error(`Error creating resources for account ${accountIdentifier}:`, error);
 		}
 	}
 	console.log('All resources created across accounts.');
