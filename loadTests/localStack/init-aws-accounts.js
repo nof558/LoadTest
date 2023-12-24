@@ -37,4 +37,4 @@ export async function initAWSAccounts() {
 
 // Execute the function
 await initAWSAccounts().catch(error => console.error('Initialization failed:', error));
-//await createResources();
+await createResources();

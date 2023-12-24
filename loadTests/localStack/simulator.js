@@ -1,6 +1,5 @@
-import AWSAccountManager from './aws/AWSAccountManager.js';
 import {performance} from 'perf_hooks';
-import {generateUniqueId, createZipBuffer, simulateDelay} from './config/config.js';
+import {generateUniqueId, createZipBuffer, simulateDelay, generateUniqueAccountId} from './config/config.js';
 import {ec2Params} from './aws/awsAccountConfigs.js';
 import accountManager from './aws/AWSAccountManager.js';
 

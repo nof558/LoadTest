@@ -15,7 +15,7 @@ export const numberOfAccounts = 10;
 export const DEFAULT_AWS_CONFIG = {
 	region: process.env.AWS_REGION || 'us-east-1',
 	endpoint,
-	sslEnabled: false,
+	sslEnabled: true,
 	s3ForcePathStyle: true,
 	httpOptions: {
 		agent: new https.Agent({
@@ -26,7 +26,7 @@ export const DEFAULT_AWS_CONFIG = {
 
 // Parameters for creating an EC2 instance
 export const ec2Params = (uniqueName = generateUniqueId('ec2_')) => ({
-	ImageId: 'ami-4ae27e22',
+	ImageId: 'ami-ff0fea8310f3',
     InstanceType: 't2.micro',
 	MinCount: 1,
 	MaxCount: 1,
